@@ -1,0 +1,169 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Synapse Portal Table Schema API",
+      "description": "Generic API to retrieve schema information for Synapse tables and validate portal search URLs",
+      "version": "1.0.0"
+    },
+    "paths": {
+      "/table-schema": {
+        "post": {
+          "summary": "Get schema for a specific Synapse table",
+          "description": "Returns column names, types, allowed values, and filterable columns for a Synapse table configured as OPEN_DATA.",
+          "operationId": "getTableSchema",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["tableId"],
+                  "properties": {
+                    "tableId": {
+                      "type": "string",
+                      "description": "Synapse table ID",
+                      "pattern": "^syn\\d+$"
+                    },
+                    "includeDistinctValues": {
+                      "type": "string",
+                      "description": "Whether to include distinct values for filterable columns",
+                      "default": "true",
+                      "enum": ["true", "false"]
+                    },
+                    "maxSampleRows": {
+                      "type": "string",
+                      "description": "Maximum number of sample rows to return (0-20)",
+                      "default": "5"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Successful response with table schema",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "tableId": {"type": "string"},
+                      "tableName": {"type": "string"},
+                      "columns": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "name": {"type": "string"},
+                            "type": {"type": "string"},
+                            "description": {"type": "string"},
+                            "allowedValues": {
+                              "type": "array",
+                              "items": {"type": "string"}
+                            },
+                            "facetType": {"type": "string"}
+                          }
+                        }
+                      },
+                      "filterableColumns": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                      },
+                      "sampleData": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                      },
+                      "distinctValues": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "array",
+                          "items": {"type": "string"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/validate-search-url": {
+        "post": {
+          "summary": "Validate and construct portal search URLs",
+          "description": "Takes a table ID, portal base URL, and search parameters, validates them against the table schema, and returns a properly formatted portal URL.",
+          "operationId": "validateSearchUrl",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["tableId", "resourceType", "portalBaseUrl"],
+                  "properties": {
+                    "tableId": {
+                      "type": "string",
+                      "description": "Synapse table ID",
+                      "pattern": "^syn\\d+$"
+                    },
+                    "resourceType": {
+                      "type": "string",
+                      "description": "Portal resource type that determines the URL path"
+                    },
+                    "portalBaseUrl": {
+                      "type": "string",
+                      "description": "Base URL of the portal (e.g., https://nf.synapse.org or https://cckp.synapse.org)"
+                    },
+                    "searchParams": {
+                      "type": "object",
+                      "description": "Key-value pairs for search filters",
+                      "additionalProperties": {"type": "string"}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Valid portal search URL with validation results",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "portalUrl": {"type": "string"},
+                      "validParams": {
+                        "type": "object",
+                        "additionalProperties": {"type": "string"}
+                      },
+                      "invalidParams": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "paramName": {"type": "string"},
+                            "suggestions": {
+                              "type": "array",
+                              "items": {"type": "string"}
+                            }
+                          }
+                        }
+                      },
+                      "availableFilters": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                      },
+                      "resourceType": {"type": "string"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
